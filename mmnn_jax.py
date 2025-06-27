@@ -94,6 +94,8 @@ class MMNNModel(nn.Module):
         activation: Activation function to apply to each layer
         use_bias: Whether to use bias in the fixed layer
         seed: Random seed for reproducible fixed weights
+    Returns:
+        Output tensor of shape (Bs, d_out)
     '''
     ranks: list
     widths: list
@@ -153,6 +155,19 @@ class MMNNModel(nn.Module):
 class Train_jax_model():
     '''
     This a basic training scheme for a jax model.
+    Inputs:
+        model: A Flax model to train
+        input_data: Input data as a jnp.ndarray
+        target_data: Target data as a jnp.ndarray
+        optimizer: Optimizer to use, e.g. 'adam', 'sgd'
+        loss_fn: Loss function to use, e.g. 'mse', 'mae'
+        learning_rate: Learning rate for the optimizer, it can also be a jax scheduler
+        num_epochs: Number of epochs to train
+        batch_size: Batch size for training
+        random_seed: Random seed for reproducibility
+    Outputs:
+        params: Trained model parameters
+        training_info: Dictionary containing training and validation losses
     '''
     def __init__(self, model: nn.Module,
                  input_data: jnp.ndarray,
@@ -248,7 +263,7 @@ class Train_jax_model():
         @jax.jit
         def train_step(params, opt_state, x_batch, y_batch):
             # Capture self variables in closure
-            loss, grads = jax.value_and_grad(self.loss_fn)(params, x_batch, y_batch)
+            loss, grads = jax.value_and_grad(self.loss_fn)(params, x_batch, y_batch) 
             updates, new_opt_state = self.optimizer.update(grads, opt_state)
             new_params = optax.apply_updates(params, updates)
             return new_params, new_opt_state, loss
