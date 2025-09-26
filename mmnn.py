@@ -92,7 +92,7 @@ class MMNN(nn.Module):
 
 
 
-class MMNN_UQ(nn.Module):
+class G_MMNN(nn.Module):
     def __init__(self, 
                  ranks = [1] + [16]*5 + [1], 
                  widths = [366]*6,
@@ -104,6 +104,7 @@ class MMNN_UQ(nn.Module):
                  init_scaling = True,
                  activation: Optional[Callable] = None):
         super().__init__()
+        
         """
         A class to configure the neural network model with Gaussian perturbation for UQ.
     
@@ -211,6 +212,9 @@ class MMNN_UQ(nn.Module):
                 
         print(f"  Total samplers created: {len(self.samplers)}")
                     
+    
+    
+    
     def forward(self, x):
         """Forward pass with Gaussian perturbations on selected layers."""
         for j in range(self.depth):
