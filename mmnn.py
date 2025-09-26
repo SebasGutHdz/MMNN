@@ -244,4 +244,7 @@ class G_MMNN(nn.Module):
                     x[:,:n] = x[:,:n] + x_id[:,:n]
         return x
     
+    def criterion(self,x, y):
+        return nn.MSELoss()(x,y)
+    
     

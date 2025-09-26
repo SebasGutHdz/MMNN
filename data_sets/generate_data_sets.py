@@ -1,3 +1,10 @@
+'''
+Implementation of test functions from the papers:
+[1] STRUCTURED AND BALANCED MULTI-COMPONENT AND MULTI-LAYER NEURAL NETWORKS
+[2] Fourier Multi-Component and Multi-Layer Neural Networks:  Unlocking High-Frequency Potential
+
+
+'''
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,7 +15,47 @@ import math
 
 class TestFunctions:
     """All test functions from the FMMNN paper for numerical experiments"""
+
+    @staticmethod
+    def f1_MMNN(x: torch.Tensor) -> torch.Tensor:
+        """test function f1 on [1] """
+        return torch.cos(20 * torch.pi * torch.abs(x) ** 1.4) + 0.5 * torch.cos(12 * torch.pi * torch.abs(x) ** 1.6)
     
+    @staticmethod
+    def f2_MMNN(x: torch.Tensor, s: float = 2) -> torch.Tensor:
+        """test function f2 on [1] 
+        f(x_1,x_2) = sum_{i,j = 1}^2 a_ij * sin(s*b_i*x_i + s*c_{i,j}*x_i*x_j) * cos(s*b_j*x_j + s*d_{i,j}*x_i^2)
+        a = [[0.3,0.2],[0.2,0.3]], b=[2π,4π], c=[[2π,4π],[8π,4π]], d=[[4π,6π],[8π,6π]]
+        """
+        # Coefficient matrices from the paper
+        a = torch.tensor([[0.3, 0.2], [0.2, 0.3]])
+        b = torch.tensor([2 * torch.pi, 4 * torch.pi])
+        c = torch.tensor([[2 * torch.pi, 4 * torch.pi], [8 * torch.pi, 4 * torch.pi]])
+        d = torch.tensor([[4 * torch.pi, 6 * torch.pi], [8 * torch.pi, 6 * torch.pi]])
+
+        x1, x2 = x[:, 0], x[:, 1]
+
+        results = torch.zeros_like(x1)
+
+        def apply_fn_to(x: torch.Tensor) -> torch.Tensor:
+            """
+            Apply the function to a single input point, we then use vmap to vectorize over batch
+            x: (2,) tensor
+            """
+            results = 0.0
+            for i in range(2):
+                for j in range(2):
+                    sin_term = torch.sin(s * b[i] * (x[0] if i == 0 else x[1]) + 
+                                       s * c[i,j] * x[0] * x[1])
+                    cos_term = torch.cos(s * b[j] * (x[1] if j == 1 else x[0]) + 
+                                   s * d[i,j] * (x1**2 if i == 0 else x2**2))
+                results += a[i,j] * sin_term * cos_term
+            return results
+        
+        results = torch.vmap(apply_fn_to)(x)
+
+        return results
+
     @staticmethod
     def smooth_basis_g(x: torch.Tensor) -> torch.Tensor:
         """Smooth basis function g used in f1 definition"""
@@ -45,7 +92,7 @@ class TestFunctions:
     @staticmethod
     def f2_nonsmooth_oscillatory(x: torch.Tensor) -> torch.Tensor:
         """
-        f2: Non-smooth oscillatory function (C⁰\C¹)
+        f2: Non-smooth oscillatory function 
         f2(x) = (1+6x⁸)/(1+8x⁶) * (⌊120x²-2⌋ + ⌊120x²+1⌋/2)²
         """
         x = x.flatten()
@@ -60,7 +107,7 @@ class TestFunctions:
     @staticmethod
     def f3_nonsmooth_oscillatory(x: torch.Tensor) -> torch.Tensor:
         """
-        f3: Another non-smooth oscillatory function (C⁰\C¹)
+        f3: Another non-smooth oscillatory function 
         f3(x) = (1+6x⁸)/(1+8x⁶) * (⌊32x-2⌋ + ⌊32x+1⌋/2)²
         """
         x = x.flatten()

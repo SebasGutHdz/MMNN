@@ -6,9 +6,17 @@ import torch.nn as nn
 class MCDropoutNN(nn.Module):
     """
     Monte Carlo Dropout Neural Network
-    Much more stable than full Bayesian approach!
     """
     def __init__(self, input_size=1, hidden_size=64, output_size=1, num_layers=3, dropout_rate=0.1,n_dropout_layers= None):
+        '''
+        Args:
+            input_size (int): Number of input features.
+            hidden_size (int): Number of neurons in each hidden layer.
+            output_size (int): Number of output features.
+            num_layers (int): Total number of layers (including input and output layers).
+            dropout_rate (float): Dropout rate (between 0 and 1).
+            n_dropout_layers (int): Number of dropout layers to include before the output layer. If None, defaults to num_layers - 1.
+        '''
         super().__init__()
         
         self.dropout_rate = dropout_rate
@@ -32,18 +40,3 @@ class MCDropoutNN(nn.Module):
     def forward(self, x):
         return self.network(x).squeeze()
     
-    def predict_with_uncertainty(self, x, n_samples=100):
-        """Get predictions with uncertainty via MC Dropout"""
-        self.train()  # Keep in training mode for dropout!
-        
-        predictions = []
-        with torch.no_grad():
-            for _ in range(n_samples):
-                pred = self.forward(x)
-                predictions.append(pred)
-        
-        predictions = torch.stack(predictions)
-        pred_mean = predictions.mean(dim=0)
-        pred_std = predictions.std(dim=0)
-        
-        return pred_mean, pred_std
